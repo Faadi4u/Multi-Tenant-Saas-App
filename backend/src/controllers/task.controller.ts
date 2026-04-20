@@ -33,3 +33,62 @@ export const getTasksByProject = asyncHandler(async (req: AuthRequest, res) => {
 
   return res.status(200).json(new ApiResponse(200, tasks));
 });
+
+export const updateTask = asyncHandler(async (req: AuthRequest, res) => {
+    const { taskId } = req.params;
+
+    if (!taskId || Array.isArray(taskId)) {
+        throw new ApiError(400, "Invalid taskId");
+    }
+
+    if (!req.user?._id || !req.user?.tenantId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const task = await Task.findOne({
+        _id: new mongoose.Types.ObjectId(taskId),
+        tenantId: new mongoose.Types.ObjectId(req.user.tenantId),
+    });
+
+    if (!task) throw new ApiError(404, "Task not found");
+
+    // Members can only update their own tasks
+    if (
+        req.user.role === "MEMBER" &&
+        task.assignedTo?.toString() !== req.user._id.toString()
+    ) {
+        throw new ApiError(403, "You can only update tasks assigned to you");
+    }
+
+    Object.assign(task, req.body);
+    await task.save();
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, task, "Task updated"));
+});
+
+export const deleteTask = asyncHandler(async (req: AuthRequest, res) => {
+    const { taskId } = req.params;
+
+    if (!taskId || Array.isArray(taskId)) {
+        throw new ApiError(400, "Invalid taskId");
+    }
+
+    if (!req.user?.tenantId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+
+    const task = await Task.findOne({
+        _id: new mongoose.Types.ObjectId(taskId),
+        tenantId: new mongoose.Types.ObjectId(req.user.tenantId),
+    });
+
+    if (!task) throw new ApiError(404, "Task not found");
+
+    await task.deleteOne();
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, {}, "Task deleted"));
+});

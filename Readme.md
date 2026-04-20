@@ -72,6 +72,7 @@ backend/
 │   │   ├── auth.middleware.ts
 │   │   ├── error.middleware.ts
 │   │   └── validate.middleware.ts
+│   │   └── rbac.middleware.ts
 │   ├── models/
 │   │   ├── organization.model.ts
 │   │   ├── project.model.ts
@@ -99,12 +100,6 @@ backend/
 ---
 
 ## 🚀 Getting Started
-
-### 1. Clone the Repository
-```bash
-git clone https://github.com/YOUR_USERNAME/safe-tenant-saas.git
-cd safe-tenant-saas
-```
 
 ### 2. Install Dependencies
 ```bash
@@ -140,29 +135,26 @@ cd frontend && npm run dev
 
 ---
 
-## 📡 API Endpoints
+## 📡 API Endpoints (Full Backend)
 
-### Auth Routes (`/api/v1/auth`)
-| Method | Endpoint    | Description                          |
-|--------|-------------|--------------------------------------|
-| POST   | `/register` | Create Organization + Admin User     |
-| POST   | `/login`    | Login and receive JWT token          |
+### Auth & Invites
+| Method | Endpoint | Description | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/v1/auth/register` | Create Org + Admin | Public |
+| POST | `/api/v1/auth/login` | Login (HttpOnly Cookie) | Public |
+| POST | `/api/v1/invites/send` | Send Team Invite | Admin |
+| POST | `/api/v1/invites/accept` | Join via Invite Token | Public |
 
-### Project Routes (`/api/v1/projects`) 🔒
-| Method | Endpoint | Description                              |
-|--------|----------|------------------------------------------|
-| GET    | `/`      | Get all projects for the logged-in tenant |
-| POST   | `/`      | Create a new project                     |
-
-### Task Routes (`/api/v1/tasks`) 🔒
-| Method | Endpoint              | Description                              |
-|--------|-----------------------|------------------------------------------|
-| POST   | `/`                   | Create a new task                        |
-| GET    | `/project/:projectId` | Get all tasks for a specific project     |
-
-> 🔒 = Requires Authentication (JWT Token)
+### Project & Task Management
+| Method | Endpoint | Description | RBAC |
+|--------|----------|-------------|------|
+| POST | `/api/v1/projects` | Create Project (Gated by Plan) | Admin, Manager |
+| DELETE| `/api/v1/projects/:id`| Delete Project | Admin |
+| GET | `/api/v1/tasks/project/:id`| View Tasks | Member (Assigned only) |
+| PATCH | `/api/v1/tasks/:id` | Update Task Status | All |
 
 ---
+
 
 ## 🛡️ Security Implementation
 
@@ -180,6 +172,10 @@ const tasks = await Task.find({ tenantId: req.user?.tenantId });
 ### 3. Input Validation
 All incoming requests are validated using Zod schemas before reaching controllers.
 
+### 4. Granular RBAC (Role Based Access Control)
+Access is restricted via a custom middleware that checks JWT roles against allowed permissions:
+```typescript
+router.route("/:projectId").delete(authorize("ADMIN"), deleteProject);
 ---
 
 ## 🔜 Upcoming Features
