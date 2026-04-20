@@ -1,0 +1,26 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Directory-based project staging artifacts
+.coverage/
+.nyc_output/
+.coverage/
+
+# IDEs
+.vscode/
+.idea/
