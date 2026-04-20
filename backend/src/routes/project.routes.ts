@@ -9,6 +9,7 @@ import {
 } from "../controllers/project.controller.ts";
 import { validate } from "../middlewares/validate.middleware.ts";
 import { createProjectSchema } from "../validators/task.validator.ts";
+import { checkPlanLimits } from "../middlewares/subscription.middleware.ts";
 
 const router = Router();
 
@@ -20,6 +21,7 @@ router
   .get(getTenantProjects) // All authenticated users can view
   .post(
     authorize("ADMIN", "MANAGER"), // Only ADMIN and MANAGER can create
+    checkPlanLimits,
     validate(createProjectSchema),
     createProject,
   );

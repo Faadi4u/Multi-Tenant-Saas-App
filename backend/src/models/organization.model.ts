@@ -8,19 +8,25 @@ export interface IOrganization extends Document {
 
 const OrganizationSchema = new Schema(
   {
-    name: { 
-        type: String, 
-        required: true, 
-        trim: true 
+    name: {
+      type: String,
+      required: true,
+      trim: true,
     },
 
-    plan: { 
-        type: String, 
-        enum: ["FREE", "PRO"], 
-        default: "FREE" 
+    plan: {
+      type: String,
+      enum: ["FREE", "PRO"],
+      default: "FREE",
     },
-    
-    stripeCustomerId: String,
+    stripeCustomerId: { type: String, unique: true, sparse: true },
+    subscriptionId: { type: String },
+    subscriptionStatus: {
+      type: String,
+      enum: ["active", "trialing", "past_due", "canceled", "incomplete"],
+      default: "trialing",
+    },
+
   },
   { timestamps: true },
 );

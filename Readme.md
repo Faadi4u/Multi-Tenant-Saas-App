@@ -68,9 +68,14 @@ backend/
 │   │   ├── auth.controller.ts
 │   │   ├── project.controller.ts
 │   │   └── task.controller.ts
+│   │   ├── invite.controller.ts      
+│   │   ├── stripe.controller.ts      
+│   │   └── webhook.controller.ts     
 │   ├── middlewares/
 │   │   ├── auth.middleware.ts
 │   │   ├── error.middleware.ts
+│   │   ├── rbac.middleware.ts        
+│   │   ├── subscription.middleware.ts 
 │   │   └── validate.middleware.ts
 │   │   └── rbac.middleware.ts
 │   ├── models/
@@ -78,12 +83,17 @@ backend/
 │   │   ├── project.model.ts
 │   │   ├── task.model.ts
 │   │   └── user.model.ts
+│   │   └── invitation.model.ts       
 │   ├── routes/
 │   │   ├── auth.routes.ts
 │   │   ├── project.routes.ts
+│   │   ├── invite.routes.ts        
+│   │   └── stripe.routes.ts 
 │   │   └── task.routes.ts
+
 │   ├── utils/
 │   │   ├── ApiError.ts
+│       ├── sendEmail.ts            
 │   │   ├── ApiResponse.ts
 │   │   └── asyncHandler.ts
 │   ├── validators/
@@ -153,6 +163,13 @@ cd frontend && npm run dev
 | GET | `/api/v1/tasks/project/:id`| View Tasks | Member (Assigned only) |
 | PATCH | `/api/v1/tasks/:id` | Update Task Status | All |
 
+```markdown
+### Billing & SaaS Logic (`/api/v1/stripe`) 💳
+| Method | Endpoint            | Description                          | Auth |
+|--------|---------------------|--------------------------------------|------|
+| POST   | `/create-checkout`  | Start PRO subscription               | Admin|
+| POST   | `/webhooks/stripe`  | Handle Stripe Events (Invoice/Pay)   | Raw  |
+
 ---
 
 
@@ -178,12 +195,17 @@ Access is restricted via a custom middleware that checks JWT roles against allow
 router.route("/:projectId").delete(authorize("ADMIN"), deleteProject);
 ---
 
-## 🔜 Upcoming Features
+## ✅ Completed Backend Features
+- [x] Multi-tenant authentication & Tenant Isolation
+- [x] RBAC (Admin/Manager/Member permissions)
+- [x] Team Invitation System (Nodemailer + TTL tokens)
+- [x] Stripe Integration (Subscriptions & Webhooks)
+- [x] Zod Validation & Global Error Handling
 
-- [ ] RBAC Middleware (Admin/Manager/Member permissions)
-- [ ] Team Invitation System (Nodemailer)
-- [ ] Stripe Integration (Subscriptions & Webhooks)
+## 🔜 Upcoming (Frontend Phase)
+- [ ] Next.js 15 Dashboard UI
+- [ ] TanStack Query Integration
 - [ ] Real-time Activity Feed (Socket.io)
-- [ ] Frontend Dashboard (Next.js 14)
+- [ ] User Profile & Settings
 
 ---
