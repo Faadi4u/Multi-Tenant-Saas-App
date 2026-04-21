@@ -1,4 +1,7 @@
 import Stripe from "stripe";
+import { configDotenv } from "dotenv";
+configDotenv(); 
+
 import { Organization } from "../models/organization.model.ts";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
@@ -8,9 +11,10 @@ export const handleStripeWebhook = async (req: any, res: any) => {
     let event: Stripe.Event;
 
     try {
+        
         // 🔒 CRITICAL: Verify the event came from Stripe
         event = stripe.webhooks.constructEvent(
-            req.body, 
+            req.body,
             sig, 
             process.env.STRIPE_WEBHOOK_SECRET!
         );

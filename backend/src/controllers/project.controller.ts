@@ -5,102 +5,114 @@ import { ApiError } from "../utils/ApiError.ts";
 import { ApiResponse } from "../utils/ApiResponse.ts";
 import type { AuthRequest } from "../middlewares/auth.middleware.ts";
 
-export const createProject = asyncHandler(async (req: AuthRequest, res) => {
-  const { name, description } = req.body;
+export const getProjectById = asyncHandler(async (req: AuthRequest, res) => {
+    const { projectId } = req.params;
+    const tenantId = req.user?.tenantId;
 
-  if (!req.user) {
-    throw new ApiError(401, "Unauthorized");
-  }
+    // 🔒 Guard: Ensure variables exist and satisfy TypeScript
+    if (!projectId || !tenantId) {
+        throw new ApiError(400, "Project ID and Tenant ID are required");
+    }
 
-  const project = await Project.create({
-    name,
-    description,
-    ownerId: new mongoose.Types.ObjectId(req.user._id),
-    tenantId: new mongoose.Types.ObjectId(req.user.tenantId),
-  });
+    const project = await Project.findOne({
+        _id: new mongoose.Types.ObjectId(projectId as string),
+        tenantId: new mongoose.Types.ObjectId(tenantId as string)
+    }).populate("ownerId", "name email");
 
-  return res
-    .status(201)
-    .json(new ApiResponse(201, project, "Project created"));
-});
+    if (!project) {
+        throw new ApiError(404, "Project not found");
+    }
 
-export const getTenantProjects = asyncHandler(async (req: AuthRequest, res) => {
-  if (!req.user) {
-    throw new ApiError(401, "Unauthorized");
-  }
-
-  const projects = await Project.find({
-    tenantId: new mongoose.Types.ObjectId(req.user.tenantId),
-  });
-
-  return res
-    .status(200)
-    .json(new ApiResponse(200, projects));
+    return res.status(200).json(new ApiResponse(200, project));
 });
 
 export const updateProject = asyncHandler(async (req: AuthRequest, res) => {
     const { projectId } = req.params;
     const { name, description } = req.body;
+    const tenantId = req.user?.tenantId;
 
-    // ✅ Validate params
-    if (!projectId || Array.isArray(projectId)) {
-        throw new ApiError(400, "Invalid projectId");
-    }
-
-    if (!req.user?._id || !req.user?.tenantId) {
-        throw new ApiError(401, "Unauthorized");
+    if (!projectId || !tenantId) {
+        throw new ApiError(400, "Missing required identifiers");
     }
 
     const project = await Project.findOne({
-        _id: new mongoose.Types.ObjectId(projectId),
-        tenantId: new mongoose.Types.ObjectId(req.user.tenantId),
+        _id: new mongoose.Types.ObjectId(projectId as string),
+        tenantId: new mongoose.Types.ObjectId(tenantId as string)
     });
 
     if (!project) {
         throw new ApiError(404, "Project not found");
     }
 
-    // Only owner or ADMIN can update
-    if (
-        project.ownerId.toString() !== req.user._id.toString() &&
-        req.user.role !== "ADMIN"
-    ) {
-        throw new ApiError(403, "You don't have permission to update this project");
+    const isOwner = project.ownerId.toString() === req.user?._id?.toString();
+    const isAdmin = req.user?.role === "ADMIN";
+
+    if (!isOwner && !isAdmin) {
+        throw new ApiError(403, "You do not have permission to update this project");
     }
 
     project.name = name || project.name;
     project.description = description || project.description;
-
     await project.save();
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, project, "Project updated"));
+    return res.status(200).json(new ApiResponse(200, project, "Project updated successfully"));
 });
 
 export const deleteProject = asyncHandler(async (req: AuthRequest, res) => {
     const { projectId } = req.params;
+    const tenantId = req.user?.tenantId;
 
-    if (!projectId || Array.isArray(projectId)) {
-        throw new ApiError(400, "Invalid projectId");
-    }
-
-    if (!req.user?.tenantId) {
-        throw new ApiError(401, "Unauthorized");
+    if (!projectId || !tenantId) {
+        throw new ApiError(400, "Missing required identifiers");
     }
 
     const project = await Project.findOne({
-        _id: new mongoose.Types.ObjectId(projectId),
-        tenantId: new mongoose.Types.ObjectId(req.user.tenantId),
+        _id: new mongoose.Types.ObjectId(projectId as string),
+        tenantId: new mongoose.Types.ObjectId(tenantId as string)
     });
 
     if (!project) {
         throw new ApiError(404, "Project not found");
     }
 
+    const isOwner = project.ownerId.toString() === req.user?._id?.toString();
+    const isAdmin = req.user?.role === "ADMIN";
+
+    if (!isOwner && !isAdmin) {
+        throw new ApiError(403, "You do not have permission to delete this project");
+    }
+
     await project.deleteOne();
 
-    return res
-        .status(200)
-        .json(new ApiResponse(200, {}, "Project deleted"));
+    return res.status(200).json(new ApiResponse(200, {}, "Project deleted successfully"));
+});
+
+// For getTenantProjects, TypeScript is usually fine with just req.user?.tenantId
+export const getTenantProjects = asyncHandler(async (req: AuthRequest, res) => {
+    const tenantId = req.user?.tenantId;
+    
+    if (!tenantId) throw new ApiError(401, "Unauthorized");
+
+    const projects = await Project.find({ 
+        tenantId: new mongoose.Types.ObjectId(tenantId as string) 
+    }).populate("ownerId", "name email");
+    
+    return res.status(200).json(new ApiResponse(200, projects));
+});
+
+export const createProject = asyncHandler(async (req: AuthRequest, res) => {
+    const { name, description } = req.body;
+    const tenantId = req.user?.tenantId;
+    const userId = req.user?._id;
+
+    if (!tenantId || !userId) throw new ApiError(401, "Unauthorized");
+
+    const project = await Project.create({
+        name,
+        description,
+        ownerId: new mongoose.Types.ObjectId(userId as string),
+        tenantId: new mongoose.Types.ObjectId(tenantId as string)
+    });
+
+    return res.status(201).json(new ApiResponse(201, project, "Project created"));
 });

@@ -13,7 +13,8 @@ export interface AuthRequest extends Request {
 }
 
 export const verifyJWT = asyncHandler(async (req: AuthRequest, res: Response, next: NextFunction) => {
-    const token = req.cookies?.token || req.headers.authorization?.split(" ")[1];
+    // Change this line:
+const token = req.headers.authorization?.split(" ")[1] || req.cookies?.token;
 
     if (!token) {
         throw new ApiError(401, "Unauthorized request");
@@ -21,6 +22,7 @@ export const verifyJWT = asyncHandler(async (req: AuthRequest, res: Response, ne
 
     try {
         const decodedToken: any = jwt.verify(token, process.env.JWT_SECRET!);
+        console.log(`SEC_AUDIT: Request from Tenant [${decodedToken.tenantId}] to [${req.method} ${req.url}]`);
         req.user = decodedToken;
         next();
     } catch (error) {

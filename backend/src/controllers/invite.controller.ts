@@ -34,7 +34,7 @@ await Invitation.create({
 
     // 4. Create the Invite Link (Pointed to your Frontend)
     const inviteUrl = `${process.env.FRONTEND_URL}/accept-invite?token=${inviteToken}`;
-
+    console.log("🚀 INVITE LINK FOR TESTING:", inviteUrl); 
     // 5. Send Email
     const message = `
         <h1>You've been invited!</h1>

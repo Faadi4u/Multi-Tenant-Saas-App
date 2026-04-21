@@ -1,6 +1,7 @@
 import { asyncHandler } from "../utils/asyncHandler.ts";
 import { ApiError } from "../utils/ApiError.ts";
 import { ApiResponse } from "../utils/ApiResponse.ts";
+import type { AuthRequest } from "../middlewares/auth.middleware.ts";
 import { User } from "../models/user.model.ts";
 import { Organization } from "../models/organization.model.ts";
 import jwt from "jsonwebtoken";
@@ -51,4 +52,24 @@ export const loginUser = asyncHandler(async (req, res) => {
         .status(200)
         .cookie("token", token, options)
         .json(new ApiResponse(200, { user, token }, "Logged in successfully"));
+});
+
+export const updateProfile = asyncHandler(async (req: AuthRequest, res) => {
+    const { name, role } = req.body; // Hacker sends 'role'
+
+    // 1. Find the user
+    const user = await User.findById(req.user?._id);
+    if (!user) throw new ApiError(404, "User not found");
+
+    // 2. 🛡️ SECURITY: Only update allowed fields. 
+    // Even if the hacker sends "role": "ADMIN", we IGNORE it.
+    if (name) user.name = name;
+
+    // We do NOT do: user.role = role;
+    
+    await user.save();
+
+    return res.status(200).json(
+        new ApiResponse(200, user, "Profile updated successfully")
+    );
 });

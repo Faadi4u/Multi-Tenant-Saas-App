@@ -6,6 +6,7 @@ import {
   getTenantProjects,
   updateProject,
   deleteProject,
+  getProjectById
 } from "../controllers/project.controller.ts";
 import { validate } from "../middlewares/validate.middleware.ts";
 import { createProjectSchema } from "../validators/task.validator.ts";
@@ -28,6 +29,7 @@ router
 
 router
   .route("/:projectId")
+  .get(getProjectById) 
   .patch(
     authorize("ADMIN", "MANAGER"), // Only ADMIN and MANAGER can update
     updateProject,

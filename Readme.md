@@ -202,6 +202,28 @@ router.route("/:projectId").delete(authorize("ADMIN"), deleteProject);
 - [x] Stripe Integration (Subscriptions & Webhooks)
 - [x] Zod Validation & Global Error Handling
 
+---
+## 🛡️ Security Audit & Testing
+
+This backend has been rigorously tested against common SaaS vulnerabilities:
+
+### 1. Tenant Isolation Test (Horizontal Privilege Escalation)
+- **Scenario:** User A attempts to access/modify User B's project by injecting a Project ID into the URL.
+- **Result:** ✅ **PASSED**. The system returns `404 Not Found` because queries are scoped strictly to the `tenantId` in the JWT.
+
+### 2. Payload Injection Test (Mass Assignment)
+- **Scenario:** A user attempts to "plant" data into another tenant's account by sending a fake `tenantId` in the JSON body.
+- **Result:** ✅ **PASSED**. The backend ignores the body's `tenantId` and forces the verified ID from the authenticated user's session.
+
+### 3. Role Escalation Test (Vertical Privilege Escalation)
+- **Scenario:** A "Member" attempts to promote themselves to "Admin" by sending `"role": "ADMIN"` in a profile update request.
+- **Result:** ✅ **PASSED**. Field-level whitelisting ensures only permitted fields (e.g., `name`) are updated, while roles remain locked.
+
+### 4. Schema Validation Test
+- **Scenario:** Sending malformed or empty data to API endpoints.
+- **Result:** ✅ **PASSED**. Zod middleware intercepts the request and returns a standardized `400 Bad Request` with a list of specific validation errors.
+
+---
 ## 🔜 Upcoming (Frontend Phase)
 - [ ] Next.js 15 Dashboard UI
 - [ ] TanStack Query Integration

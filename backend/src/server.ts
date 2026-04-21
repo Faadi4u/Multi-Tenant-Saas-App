@@ -1,5 +1,5 @@
-import { configDotenv } from "dotenv";
-configDotenv({path: './.env'});
+import dotenv from "dotenv";
+dotenv.config();
 import {app} from "./app.ts";
 import { connectDB } from "./db/index.ts";
 
